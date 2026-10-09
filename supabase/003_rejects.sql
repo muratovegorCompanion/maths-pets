@@ -1,13 +1,15 @@
 -- A refused row is counted, not lost: the tablet deletes a row from its outbox once the call
 -- succeeds, so without this a systematic refusal would silently drop every answer.
 -- Only the reason is kept — never the client's text (the key is public, anyone can call this) —
--- and at most 1000 refusals a day. The daily report reads the count only.
+-- and refusals are counted per day and reason, so junk sent from outside cannot hide real ones.
+-- The daily report reads the count only.
 create table maths_pets.rejects (
-  id bigint generated always as identity primary key,
-  received_at timestamptz not null default now(),
-  sqlstate text not null,
-  constraint_name text,
-  payload_bytes integer not null
+  day date not null,
+  code text not null,               -- SQLSTATE; not named "sqlstate": that is a PL/pgSQL variable
+  constraint_name text not null default '',
+  n integer not null default 0,
+  last_at timestamptz not null default now(),
+  primary key (day, code, constraint_name)
 );
 alter table maths_pets.rejects enable row level security;
 
@@ -27,8 +29,8 @@ begin
   if jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) > 100 then
     raise exception 'bad batch';
   end if;
-  -- Row by row: a malformed row cannot block the outbox. A refused row is counted in rejects with
-  -- the reason code only: no client text is stored, and at most 1000 refusals a day are kept.
+  -- Row by row: a malformed row cannot block the outbox. Refusals are counted per day and reason —
+  -- no client text is stored, the table stays tiny, and junk from outside cannot crowd out real counts.
   for r in select value from jsonb_array_elements(p_rows) loop
     begin
       insert into maths_pets.answers (client_id, device_id, answered_at, mode, track, level, question,
@@ -42,10 +44,9 @@ begin
       n := n + k;
     exception when others then
       get stacked diagnostics v_state = returned_sqlstate, v_constraint = constraint_name;
-      if (select count(*) from maths_pets.rejects where received_at > now() - interval '1 day') < 1000 then
-        insert into maths_pets.rejects (sqlstate, constraint_name, payload_bytes)
-        values (v_state, nullif(v_constraint, ''), pg_column_size(r));
-      end if;
+      insert into maths_pets.rejects as x (day, code, constraint_name, n)
+      values ((now() at time zone 'Asia/Bangkok')::date, v_state, coalesce(v_constraint, ''), 1)
+      on conflict (day, code, constraint_name) do update set n = x.n + 1, last_at = now();
     end;
   end loop;
   return n;

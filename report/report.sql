@@ -15,7 +15,7 @@ select (select day from params) as day,
        -- one question counts at most 2 minutes: longer means she stepped away
        round(coalesce(sum(least(seconds, 120)), 0) / 60.0, 1) as minutes_thinking,
        count(distinct device_id) as devices,
-       (select count(*) from maths_pets.rejects x, params p where (x.received_at at time zone 'Asia/Bangkok')::date = p.day) as refused_rows,
+       coalesce((select sum(n) from maths_pets.rejects x, params p where x.day = p.day), 0) as refused_rows,
        (select max(received_at) at time zone 'Asia/Bangkok' from maths_pets.answers) as last_answer_arrived
 from day_rows;
 
