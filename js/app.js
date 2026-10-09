@@ -1,5 +1,5 @@
 // js/app.js — loads the game, picks the screen, keeps everything saved and sent.
-import { loadGame, saveGame } from './storage.js';
+import { loadGame, saveGame, SAVE_KEY } from './storage.js';
 import { createReporter } from './reporter.js';
 import { createSound } from './sound.js';
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
@@ -16,7 +16,16 @@ const sound = createSound(game);
 const root = document.getElementById('app');
 const screens = { start: startScreen, hub: hubScreen, walk: walkScreen, home: homeScreen, shop: shopScreen, zoomies: zoomiesScreen };
 
-function save() { saveGame(game); }
+// Another open copy of the game (the installed app and a browser tab) saved newer progress:
+// stop saving this copy's older state and reload to pick the newer one up.
+let stale = false;
+addEventListener('storage', e => {
+  if (e.key !== SAVE_KEY || stale) return;
+  stale = true;
+  location.reload();
+});
+
+function save() { if (!stale) saveGame(game); }
 
 function go(name, params = {}) {
   const make = screens[name] ?? hubScreen;

@@ -18,7 +18,7 @@ window.__fit = async () => {
   const typeIn = n => { for (const d of String(n)) [...document.querySelectorAll('.kp-key')].find(b => b.textContent === d).click(); document.querySelector('.kp-ok').click(); };
   const out = [`${innerWidth}x${innerHeight}`];
   out.push(fit('hub'));
-  document.querySelector('.btn.primary.big').click(); await sleep(150);
+  document.querySelector('.btn.primary.big').click(); await sleep(450);
   out.push(fit(document.querySelector('.choices') ? 'walk-choice' : 'walk-keypad'));
   const ans = solve(qText());
   if (document.querySelector('.choices')) [...document.querySelectorAll('.choice')].find(b => +b.textContent !== ans).click();
@@ -35,6 +35,7 @@ window.__fit = async () => {
   out.push(fit('hint-done'));
   document.querySelector('.btn.primary')?.click(); await sleep(100);
   for (let i = 0; i < 12 && document.querySelector('.question'); i++) {
+    await sleep(450); // answers within 350 ms of a question appearing are ignored as double taps
     const a = solve(qText());
     if (document.querySelector('.choices')) [...document.querySelectorAll('.choice')].find(b => +b.textContent === a).click(); else typeIn(a);
     await sleep(1100);

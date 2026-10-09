@@ -61,3 +61,17 @@ test('a typed wrong answer still gets its mistake tag', () => {
   assert.equal(res.tag, 'forgot_carry');
   assert.equal(res.row.mistake_tag, 'forgot_carry');
 });
+
+test('a tap in the first moment after a question appears is ignored (the second half of a double tap)', () => {
+  const g = newGame(); const w = startWalk(); showNext(w, g, 1000);
+  assert.equal(submit(w, g, w.q.answer, 1150, '2026-10-09'), null);
+  assert.equal(g.progress.counter, 0);
+  assert.ok(submit(w, g, w.q.answer, 1500, '2026-10-09'));
+  assert.equal(g.progress.counter, 1);
+});
+
+test('time on one question is capped at 10 minutes (she walked away), so the row is never rejected', () => {
+  const g = newGame(); const w = startWalk(); showNext(w, g, 0);
+  const res = submit(w, g, w.q.answer, 2 * 60 * 60 * 1000, '2026-10-09');
+  assert.equal(res.row.seconds, 600);
+});

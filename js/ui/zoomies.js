@@ -38,7 +38,7 @@ export function zoomiesScreen(ctx) {
   }
 
   function play() {
-    let right = 0, q = null, shownAt = 0, over = false, lastKey = null;
+    let right = 0, q = null, shownAt = 0, over = false, lastKey = null, waiting = false;
     const t0 = performance.now();
     const fill = h('div', { class: 'time-fill' });
     const count = h('div', { class: 'pill' }, '✓ 0');
@@ -46,7 +46,7 @@ export function zoomiesScreen(ctx) {
     const slot = () => question.querySelector('.slot');
     const pad = keypad({
       sound,
-      onChange: v => { const s = slot(); if (s) s.textContent = v || '?'; },
+      onChange: v => { const s = slot(); if (s && !waiting) s.textContent = v || '?'; },
       onSubmit: v => answer(v),
     });
 
@@ -55,12 +55,15 @@ export function zoomiesScreen(ctx) {
       while (q.key === lastKey);
       lastKey = q.key;
       shownAt = performance.now();
+      waiting = false;
+      pad.reset();
       question.classList.remove('good', 'bad');
       question.replaceChildren(h('span', {}, `${q.text} = `), h('span', { class: 'slot' }, '?'));
     }
 
     function answer(v) {
-      if (over) return;
+      if (over || waiting) return;
+      waiting = true;
       const correct = v === q.answer;
       reporter.log({
         mode: 'zoomies', track: 'times', level: q.level, question: q.text, correct_answer: q.answer,

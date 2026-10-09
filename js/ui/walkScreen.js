@@ -145,6 +145,7 @@ export function walkScreen(ctx) {
 
   function chest() {
     dots.remove();
+    bar.querySelector('.icon-btn[aria-label="Back"]')?.remove();
     const box = h('button', { class: 'chest wobble', 'aria-label': 'Open the chest' }, goalMet ? '🎁🎁' : '🎁');
     const stage = h('div', { class: 'chest-stage' },
       h('h1', {}, 'Walk complete!'),

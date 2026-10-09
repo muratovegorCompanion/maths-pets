@@ -4,6 +4,10 @@ import { makeChoices, hintSteps, classifyMistake } from './maths.js';
 import { addTreats, countAnswer, TREATS_RIGHT, TREATS_HINT } from './rewards.js';
 
 export const WALK_PLAN = { add: 6, times: 4 };
+// A tap this soon after a question appears is the second half of a double tap on the previous screen.
+export const MIN_ANSWER_MS = 350;
+// Longer than this on one question means she left the tablet; record the cap, not the idle time.
+export const MAX_SECONDS = 600;
 
 export function startWalk(rand = Math.random) {
   const tracks = [...Array(WALK_PLAN.add).fill('add'), ...Array(WALK_PLAN.times).fill('times')];
@@ -18,7 +22,7 @@ export function showNext(walk, game, now, rand = Math.random) {
 }
 
 export function submit(walk, game, value, now, today) {
-  if (walk.locked || !walk.q) return null;
+  if (walk.locked || !walk.q || now - walk.startedAt < MIN_ANSWER_MS) return null;
   walk.locked = true;
   const q = walk.q;
   const correct = value === q.answer;
@@ -31,7 +35,7 @@ export function submit(walk, game, value, now, today) {
   const row = {
     mode: 'walk', track: q.track, level: q.level, question: q.text, correct_answer: q.answer,
     given_answer: value, is_correct: correct, input_kind: q.mode, mistake_tag: tag,
-    hint_used: !correct, seconds: Math.round((now - walk.startedAt) / 100) / 10,
+    hint_used: !correct, seconds: Math.min(MAX_SECONDS, Math.round((now - walk.startedAt) / 100) / 10),
   };
   return { correct, tag, event, goalJustMet, row };
 }

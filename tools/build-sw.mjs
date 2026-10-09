@@ -25,7 +25,8 @@ const FONT_CACHE = 'maths-pets-fonts';
 const FILES = ${JSON.stringify(['./', ...files], null, 2)};
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the browser's HTTP cache, so a quick second deploy never stores the previous files.
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {

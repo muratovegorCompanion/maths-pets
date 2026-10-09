@@ -12,8 +12,11 @@ select (select day from params) as day,
        count(*) filter (where mode = 'walk' and is_correct) as walk_right,
        count(*) filter (where mode = 'zoomies') as zoomies_answers,
        count(*) filter (where mode = 'zoomies' and is_correct) as zoomies_right,
-       round(coalesce(sum(seconds), 0) / 60.0, 1) as minutes_thinking,
-       count(distinct device_id) as devices
+       -- one question counts at most 2 minutes: longer means she stepped away
+       round(coalesce(sum(least(seconds, 120)), 0) / 60.0, 1) as minutes_thinking,
+       count(distinct device_id) as devices,
+       (select count(*) from maths_pets.rejects x, params p where (x.received_at at time zone 'Asia/Bangkok')::date = p.day) as refused_rows,
+       (select max(received_at) at time zone 'Asia/Bangkok' from maths_pets.answers) as last_answer_arrived
 from day_rows;
 
 -- 2. Where she is: highest step per track today, and how she did on it.
@@ -31,15 +34,15 @@ select t.track, t.level,
 from top t join day_rows d on d.track = t.track and d.level = t.level
 group by t.track, t.level;
 
--- 3. Mistakes by kind, with up to three examples each.
+-- 3. Mistakes by kind, walks and Zoomies apart (Zoomies slips are speed, not understanding).
 with params as (select case when extract(hour from now() at time zone 'Asia/Bangkok') < 12
                             then (now() at time zone 'Asia/Bangkok')::date - 1
                             else (now() at time zone 'Asia/Bangkok')::date end as day)
-select track, coalesce(mistake_tag, 'other') as kind, count(*) as n,
+select mode, track, coalesce(mistake_tag, 'other') as kind, count(*) as n,
        (array_agg(question || ' → ' || coalesce(given_answer::text, '—') || ' (верно ' || correct_answer || ')' order by answered_at))[1:3] as examples
 from maths_pets.answers a, params p
 where not is_correct and (a.answered_at at time zone 'Asia/Bangkok')::date = p.day
-group by track, kind order by n desc;
+group by mode, track, kind order by (mode = 'walk') desc, n desc;
 
 -- 4. Days with 20+ walk answers over the last 30 days (for the streak).
 select (answered_at at time zone 'Asia/Bangkok')::date as day, count(*) filter (where mode = 'walk') as walk_answers
