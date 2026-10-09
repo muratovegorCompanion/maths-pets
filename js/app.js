@@ -31,3 +31,5 @@ reporter.flush();
 addEventListener('online', () => reporter.flush());
 setInterval(() => reporter.flush(), 30000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); reporter.flush(); } });
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
