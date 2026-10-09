@@ -14,7 +14,7 @@ export async function swSource() {
   const files = ['index.html', 'styles.css', 'manifest.webmanifest', 'assets/icon-192.png', 'assets/icon-512.png',
     ...list('js'), ...list('js/ui'),
     ...fs.readdirSync(path.join(root, 'assets/sounds')).filter(f => f.endsWith('.mp3')).sort().map(f => `assets/sounds/${f}`),
-    ...FRIENDS.map(f => `assets/friends/${f.id}.webp`), ...ITEMS.map(i => `assets/items/${i.id}.webp`), ...ROOMS.map(r => `assets/rooms/${r.id}.webp`)];
+    ...FRIENDS.map(f => `assets/friends/${f.id}.webp`), ...FRIENDS.map(f => `assets/friends/sleep/${f.id}.webp`), ...ITEMS.map(i => `assets/items/${i.id}.webp`), ...ROOMS.map(r => `assets/rooms/${r.id}.webp`)];
   const hash = crypto.createHash('sha256');
   for (const f of files) hash.update(f).update(fs.readFileSync(path.join(root, f)));
   const version = hash.digest('hex').slice(0, 12);

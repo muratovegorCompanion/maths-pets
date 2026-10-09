@@ -57,9 +57,39 @@ export function createSound(game) {
     } catch { /* no audio on this device */ }
   }
 
+  function sweep(from, to, dur, type = 'sine', vol = 0.16) {
+    if (game.muted) return;
+    try {
+      const a = audio(); if (!a) return;
+      const o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
+      o.type = type; o.frequency.setValueAtTime(from, t); o.frequency.exponentialRampToValueAtTime(to, t + dur);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+    } catch { /* no audio */ }
+  }
+
+  function noise(dur, vol = 0.12, cutoff = 1800) {
+    if (game.muted) return;
+    try {
+      const a = audio(); if (!a) return;
+      const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+      const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+      src.buffer = buf; f.type = 'lowpass'; f.frequency.value = cutoff; g.gain.value = vol;
+      src.connect(f).connect(g).connect(a.destination); src.start();
+    } catch { /* no audio */ }
+  }
+
   return {
     tap: () => play([[660, 0, 0.05]]),
     right: bark,
+    bark,
+    chirp: () => sweep(700, 1400, 0.18, 'sine', 0.14),
+    boing: () => sweep(180, 520, 0.35, 'triangle', 0.16),
+    splash: () => noise(0.45, 0.14, 2200),
+    munch: () => { noise(0.08, 0.1, 900); setTimeout(() => noise(0.08, 0.1, 900), 160); setTimeout(() => noise(0.08, 0.1, 900), 320); },
+    melody: () => play([[523, 0, 0.18], [659, 0.2, 0.18], [784, 0.4, 0.18], [659, 0.6, 0.18], [880, 0.8, 0.3], [784, 1.1, 0.4]]),
     wrong: () => play([[300, 0, 0.16, 'triangle'], [240, 0.13, 0.22, 'triangle']]),
     chest: () => play([[523, 0, 0.14], [659, 0.12, 0.14], [784, 0.24, 0.14], [1047, 0.36, 0.4]]),
     levelUp: () => play([[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.1], [1319, 0.4, 0.45]]),

@@ -1,5 +1,6 @@
 // js/ui/home.js — the friends' house: place things, drag them around, watch friends wander.
-import { h, friendSrc, itemSrc, roomSrc, topBar } from './dom.js';
+import { h, itemSrc, roomSrc, topBar, toast } from './dom.js';
+import { createPets } from './pets.js';
 import { ROOMS, ITEMS } from '../catalog.js';
 
 const BIG = new Set(['rug', 'tree', 'treehouse', 'pond', 'trampoline', 'picnic', 'sofa', 'swing']);
@@ -15,12 +16,15 @@ export function homeScreen(ctx, { room: startRoom = 'living' } = {}) {
   let roomId = startRoom;
 
   const roomEl = h('div', { class: 'room' });
+  const things = h('div', { class: 'things' });   // placed things; the friends live next to it in roomEl
+  const bar = topBar(ctx, { back: () => go('hub') });
+  let pets = null;
   const tray = h('div', { class: 'tray' });
   const tabs = h('div', { class: 'tabs' });
   // The room fills the whole screen; the buttons and the tray float over it.
   const screen = h('section', { class: 'screen home' },
     roomEl,
-    h('div', { class: 'home-top' }, topBar(ctx, { back: () => go('hub') }), tabs),
+    h('div', { class: 'home-top' }, bar, tabs),
     tray);
 
   function placed() { return r.placed[roomId] ?? (r.placed[roomId] = []); }
@@ -28,7 +32,7 @@ export function homeScreen(ctx, { room: startRoom = 'living' } = {}) {
   function drawTabs() {
     tabs.replaceChildren(...ROOMS.map(rm => h('button', {
       class: `tab${rm.id === roomId ? ' on' : ''}`,
-      onclick: () => { roomId = rm.id; sound.tap(); draw(); },
+      onclick: () => { roomId = rm.id; sound.tap(); enterRoom(); },
     }, rm.name)));
   }
 
@@ -79,35 +83,54 @@ export function homeScreen(ctx, { room: startRoom = 'living' } = {}) {
     return el;
   }
 
-  function friendEl(id) {
-    const el = h('img', { class: 'roamer', src: friendSrc(id), alt: '' });
-    const move = () => setPos(el, 0.12 + Math.random() * 0.76, 0.5 + Math.random() * 0.32);
-    move();
-    el.addEventListener('click', () => { sound.tap(); el.classList.remove('hop'); void el.offsetWidth; el.classList.add('hop'); });
-    el.wander = move;
-    return el;
+  function treatButton() {
+    // drag the bone onto a friend to feed it
+    const btn = h('button', { class: 'tray-item treat', 'aria-label': 'Treat' }, h('span', { class: 'treat-bone' }, '🦴'), h('span', { class: 'treat-count' }, String(r.treats)));
+    let ghost = null;
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch { /* synthetic pointer */ }
+      ghost = h('div', { class: 'ghost-bone', style: { left: `${e.clientX}px`, top: `${e.clientY}px` } }, '🦴');
+      document.body.append(ghost);
+    });
+    btn.addEventListener('pointermove', e => { if (ghost) { ghost.style.left = `${e.clientX}px`; ghost.style.top = `${e.clientY}px`; } });
+    const end = e => {
+      if (!ghost) return;
+      ghost.remove(); ghost = null;
+      if (!pets?.feedAt(e.clientX, e.clientY)) toast('Drag the bone onto a friend! 🦴');
+    };
+    btn.addEventListener('pointerup', end);
+    btn.addEventListener('pointercancel', end);
+    return btn;
   }
 
   function draw() {
     drawTabs();
     roomEl.style.backgroundImage = `url(${roomSrc(roomId)})`;
-    const friends = r.friends.map(friendEl);
-    roomEl.replaceChildren(...placed().map(placedItem), ...friends);
+    things.replaceChildren(...placed().map(placedItem));
     const here = new Set(placed().map(p => p.id));
     const mine = ITEMS.filter(i => i.room === roomId && r.items.includes(i.id) && !here.has(i.id));
     tray.replaceChildren(
-      h('div', { class: 'tray-title' }, mine.length ? 'Tap to put in the room · drag down here to put away' : 'Drag things down here to put them away'),
-      h('div', { class: 'tray-items' }, ...mine.map(i => h('button', {
+      h('div', { class: 'tray-title' }, roomId === 'garden' ? 'Tap the grass to throw the ball · drag the bone to a friend' : 'Drag the bone to a friend · hold a friend to stroke it'),
+      h('div', { class: 'tray-items' }, treatButton(), ...mine.map(i => h('button', {
         class: 'tray-item', 'aria-label': i.name,
         onclick: () => { placed().push({ id: i.id, x: 0.25 + Math.random() * 0.5, y: 0.5 + Math.random() * 0.3 }); sound.right(); save(); draw(); },
       }, h('img', { src: itemSrc(i.id), alt: '' })))));
   }
 
-  const timer = setInterval(() => {
-    if (!screen.isConnected) { clearInterval(timer); return; }
-    for (const el of roomEl.querySelectorAll('.roamer')) if (Math.random() < 0.5) el.wander();
-  }, 3000);
+  // Switching rooms starts the friends afresh in the new room.
+  function enterRoom() {
+    pets?.destroy();
+    roomEl.replaceChildren(things);
+    draw();
+    pets = createPets({ roomEl, ids: r.friends, items: () => placed(), sound, game, save,
+      onTreats: () => { bar.update(); draw(); } });
+  }
 
-  draw();
+  roomEl.addEventListener('pointerdown', e => {
+    if (roomId === 'garden' && (e.target === roomEl || e.target === things)) pets?.throwBall(e.clientX, e.clientY);
+  });
+
+  enterRoom();
   return screen;
 }

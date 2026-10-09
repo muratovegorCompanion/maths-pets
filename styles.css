@@ -82,6 +82,11 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   animation: pop .3s ease-out; text-align: center; max-width: 90vw;
 }
 
+/* ---------- the game did not load ---------- */
+.oops { height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 16px; text-align: center; padding: 16px; }
+.oops-pet { font-size: 96px; }
+.oops p { font-size: clamp(24px, 4vw, 36px); font-weight: 800; }
+
 /* ---------- start ---------- */
 .start { grid-template-rows: 1fr; place-items: center; }
 .start-card { display: grid; justify-items: center; gap: 18px; width: min(560px, 100%); }
@@ -205,14 +210,60 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 }
 .home-top > * { pointer-events: auto; }
 .home-top .tabs { justify-self: center; }
-.thing, .roamer { position: absolute; transform: translate(-50%, -70%); touch-action: none; }
+.thing { position: absolute; transform: translate(-50%, -70%); touch-action: none; }
 .thing { width: 24cqmin; cursor: grab; transition: filter .15s; }
 .thing.big { width: 34cqmin; }
 .thing.lifted { filter: drop-shadow(0 10px 8px rgba(0, 0, 0, .25)); }
 .thing.leaving { opacity: .4; }
-.roamer { width: 20cqmin; transition: left 2.6s ease-in-out, top 2.6s ease-in-out; z-index: 200; }
-.roamer.hop { animation: hop .5s ease-out; }
-@keyframes hop { 0%, 100% { margin-top: 0; } 40% { margin-top: -6%; } }
+/* friends in the house */
+.things { position: absolute; inset: 0; }
+.pet { position: absolute; width: 20cqmin; transform: translate(-50%, -80%); touch-action: none; cursor: grab; }
+.pet-face { transition: transform .25s; }
+.pet-img { width: 100%; display: block; transform-origin: 50% 100%; pointer-events: none; }
+.pet.mode-idle .pet-img { animation: breathe 2.4s ease-in-out infinite; }
+.pet.mode-walk .pet-img { animation: waddle .5s ease-in-out infinite; }
+.pet.mode-walk.fast .pet-img { animation-duration: .26s; }
+.pet.act-sleep .pet-img { animation: breathe 3.4s ease-in-out infinite; }
+.pet.act-bounce .pet-img { animation: boing .9s ease-in-out infinite; }
+.pet.act-swing .pet-img { animation: sway 1.7s ease-in-out infinite; transform-origin: 50% -30%; }
+.pet.act-splash .pet-img { animation: paddle .7s ease-in-out infinite; clip-path: inset(0 0 24% 0); }
+.pet.act-climb .pet-img { animation: peek 2.2s ease-in-out infinite; }
+.pet.act-music .pet-img, .pet.act-watch .pet-img, .pet.act-sniff .pet-img,
+.pet.act-rest .pet-img, .pet.act-eat .pet-img { animation: nod 1.1s ease-in-out infinite; }
+.pet.react-happy .pet-img { animation: jumpy .45s ease-out 2; }
+.pet.react-love .pet-img { animation: wiggle .5s ease-in-out infinite; }
+.pet.react-stretch .pet-img { animation: stretchy 1.4s ease-out; }
+.pet.react-eat .pet-img { animation: nod .3s ease-in-out infinite; }
+.pet.mode-carried { filter: drop-shadow(0 14px 10px rgba(0, 0, 0, .3)); z-index: 300 !important; }
+.pet.mode-carried .pet-img { animation: dangle .6s ease-in-out infinite; }
+.carried-ball { position: absolute; left: 58%; top: 52%; font-size: 6cqmin; display: none; pointer-events: none; }
+.ground-ball { position: absolute; transform: translate(-50%, -80%); font-size: 7cqmin; z-index: 9; animation: ball-drop .5s ease-out; pointer-events: none; }
+.particle {
+  position: absolute; transform: translate(-50%, -50%); font-size: 5cqmin; pointer-events: none; z-index: 400;
+  animation: particle 1.6s ease-out forwards;
+}
+.ghost-bone { position: fixed; transform: translate(-50%, -50%); font-size: 56px; pointer-events: none; z-index: 1000; }
+.tray-item.treat { display: grid; place-items: center; position: relative; touch-action: none; }
+.treat-bone { font-size: 34px; line-height: 1; }
+.treat-count { position: absolute; right: 6px; bottom: 2px; font-weight: 800; font-size: 15px; color: var(--primary-dark); }
+
+@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.02, 1.04); } }
+@keyframes waddle { 0%, 100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(5deg) translateY(-6%); } }
+@keyframes boing { 0%, 100% { transform: translateY(0) scale(1.06, .9); } 50% { transform: translateY(-65%) scale(.96, 1.05); } }
+@keyframes sway { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
+@keyframes paddle { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-4%) rotate(3deg); } }
+@keyframes peek { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5%); } }
+@keyframes nod { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(4deg); } }
+@keyframes jumpy { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-35%) scale(.95, 1.06); } }
+@keyframes wiggle { 0%, 100% { transform: rotate(-6deg) scale(1.04); } 50% { transform: rotate(6deg) scale(1.04); } }
+@keyframes stretchy { 0%, 100% { transform: scale(1, 1); } 40% { transform: scale(1.16, .84); } 70% { transform: scale(.93, 1.1); } }
+@keyframes dangle { 0%, 100% { transform: rotate(-5deg) scale(1.05); } 50% { transform: rotate(5deg) scale(1.05); } }
+@keyframes ball-drop { 0% { transform: translate(-50%, -300%) scale(.8); } 70% { transform: translate(-50%, -70%) scale(1.05); } 100% { transform: translate(-50%, -80%); } }
+@keyframes particle {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), -260%) scale(1.1); }
+}
 .tray {
   position: absolute; z-index: 500; left: 50%; transform: translateX(-50%);
   bottom: max(10px, env(safe-area-inset-bottom)); width: max-content; max-width: calc(100% - 32px); min-width: min(360px, calc(100% - 32px));

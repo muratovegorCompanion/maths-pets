@@ -15,5 +15,15 @@
 <body>
   <main id="app"></main>
   <script type="module" src="js/app.js"></script>
+  <script>
+    // If a file of the game failed to download (a Wi-Fi blip on the very first visit), the game never starts
+    // and the screen stays blank. Offer a button instead. If the game starts late, it replaces this.
+    setTimeout(function () {
+      var app = document.getElementById('app');
+      if (app.children.length) return;
+      app.innerHTML = '<div class="oops"><div class="oops-pet">🐾</div><p>Oops! The game didn\'t load.</p>' +
+        '<button class="btn primary big" onclick="location.reload()">Tap to try again</button></div>';
+    }, 6000);
+  </script>
 </body>
 </html>
