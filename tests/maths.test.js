@@ -120,3 +120,14 @@ test('times hint counts in the table', () => {
   assert.equal(s[0].prompt, '8, 16, 24, ?');
   assert.equal(s[0].answer, 32);
 });
+
+test('classifyMistake names a typed typical mistake', async () => {
+  const { classifyMistake } = await import('../js/maths.js');
+  const q = { track: 'add', level: 5, a: 59, b: 25, answer: 84, key: '59+25', text: '59 + 25' };
+  assert.equal(classifyMistake(q, 74), 'forgot_carry');
+  assert.equal(classifyMistake(q, 714), 'side_by_side');
+  assert.equal(classifyMistake(q, 50), null);
+  const t = { track: 'times', level: 1, a: 7, b: 8, answer: 56, key: '7x8', text: '7 × 8' };
+  assert.equal(classifyMistake(t, 15), 'added_instead');
+  assert.equal(classifyMistake(t, 64), 'neighbour_fact');
+});

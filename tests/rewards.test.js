@@ -82,3 +82,16 @@ test('localDate uses the local calendar day', () => {
   assert.equal(localDate(new Date(2026, 9, 9, 23, 59)), '2026-10-09');
   assert.equal(localDate(new Date(2026, 9, 10, 0, 1)), '2026-10-10');
 });
+
+test('currentStreak shows the streak only while it is still alive', async () => {
+  const { currentStreak } = await import('../js/rewards.js');
+  const r = newRewards();
+  assert.equal(currentStreak(r, '2026-10-09'), 0);
+  meetGoal(r, '2026-10-05'); meetGoal(r, '2026-10-06'); meetGoal(r, '2026-10-07');
+  assert.equal(currentStreak(r, '2026-10-07'), 3);
+  assert.equal(currentStreak(r, '2026-10-08'), 3);
+  assert.equal(currentStreak(r, '2026-10-09'), 3);   // one missed day can still be forgiven
+  assert.equal(currentStreak(r, '2026-10-10'), 0);
+  const s = newRewards(); meetGoal(s, '2026-10-05');
+  assert.equal(currentStreak(s, '2026-10-07'), 0);   // short streak, gap of 2 breaks it
+});

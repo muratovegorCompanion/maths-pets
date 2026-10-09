@@ -99,3 +99,10 @@ export function hintSteps(q) {
     { label: 'Put them together', prompt: `${ta + tb} + ${oa + ob}`, answer: q.answer },
   ];
 }
+
+// Which typical mistake a wrong answer looks like, whether she picked it or typed it.
+export function classifyMistake(q, value) {
+  if (value === q.answer) return null;
+  const hit = (q.track === 'add' ? wrongAdditions(q) : wrongTimes(q)).find(w => w.value === value);
+  return hit ? hit.tag : null;
+}

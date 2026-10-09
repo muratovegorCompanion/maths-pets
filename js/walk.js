@@ -1,6 +1,6 @@
 // js/walk.js — one walk of 10 questions: what is on screen, what happens on each tap.
 import { nextQuestion, recordAnswer } from './progress.js';
-import { makeChoices, hintSteps } from './maths.js';
+import { makeChoices, hintSteps, classifyMistake } from './maths.js';
 import { addTreats, countAnswer, TREATS_RIGHT, TREATS_HINT } from './rewards.js';
 
 export const WALK_PLAN = { add: 6, times: 4 };
@@ -22,7 +22,7 @@ export function submit(walk, game, value, now, today) {
   walk.locked = true;
   const q = walk.q;
   const correct = value === q.answer;
-  const tag = correct ? null : (walk.choices?.find(c => c.value === value)?.tag ?? null);
+  const tag = correct ? null : (walk.choices?.find(c => c.value === value)?.tag ?? classifyMistake(q, value));
   const { event } = recordAnswer(game.progress, q, correct);
   const { goalJustMet } = countAnswer(game.rewards, today);
   if (correct) addTreats(game.rewards, TREATS_RIGHT);

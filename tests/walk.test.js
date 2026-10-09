@@ -51,3 +51,13 @@ test('ten advances finish the walk', () => {
   for (let i = 0; i < 10; i++) { showNext(w, g, 0); submit(w, g, w.q.answer, 1000, '2026-10-09'); advance(w); }
   assert.equal(w.done, true);
 });
+
+test('a typed wrong answer still gets its mistake tag', () => {
+  const g = newGame(); g.progress.add.mode = 'keypad'; g.progress.times.mode = 'keypad';
+  const w = startWalk(); showNext(w, g, 0);
+  w.q = { track: 'add', level: 1, a: 59, b: 25, answer: 84, key: '59+25', text: '59 + 25', mode: 'keypad' };
+  w.choices = null;
+  const res = submit(w, g, 74, 1000, '2026-10-09');
+  assert.equal(res.tag, 'forgot_carry');
+  assert.equal(res.row.mistake_tag, 'forgot_carry');
+});

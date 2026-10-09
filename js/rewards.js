@@ -43,6 +43,16 @@ function extendStreak(r, today) {
   s.lastDate = today;
 }
 
+// The streak to show today: it stays alive through yesterday, or through a gap the weekly freeze can still cover.
+export function currentStreak(r, today) {
+  const s = r.streak;
+  if (!s.lastDate) return 0;
+  const gap = daysBetween(s.lastDate, today);
+  if (gap <= 1) return s.count;
+  if (gap === 2 && s.count >= 3 && s.freezeWeek !== isoWeek(today)) return s.count;
+  return 0;
+}
+
 export function countAnswer(r, today) {
   if (r.daily.date !== today) r.daily = { date: today, count: 0, goalMet: false };
   r.daily.count += 1;
