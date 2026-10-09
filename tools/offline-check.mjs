@@ -25,7 +25,10 @@ try {
 
   await send('Network.enable');
   await send('Page.navigate', { url: URL_ });
-  await sleep(4000);
+  for (let i = 0; i < 60; i++) {
+    if (await evaluate(`navigator.serviceWorker.getRegistration().then(r => !!r?.active)`)) break;
+    await sleep(500);
+  }
   const online = await evaluate(`(async () => { const keys = await caches.keys(); const c = keys.find(k => k.startsWith('maths-pets-') && k !== 'maths-pets-fonts'); return { sw: !!(await navigator.serviceWorker.getRegistration())?.active, cache: c, files: c ? (await (await caches.open(c)).keys()).length : 0, h1: document.querySelector('h1')?.textContent }; })()`);
   console.log('online :', JSON.stringify(online));
 
