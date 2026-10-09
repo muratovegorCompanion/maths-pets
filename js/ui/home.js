@@ -5,7 +5,9 @@ import { ROOMS, ITEMS } from '../catalog.js';
 const BIG = new Set(['rug', 'tree', 'treehouse', 'pond', 'trampoline', 'picnic', 'sofa', 'swing']);
 // Rugs, blankets and ponds lie on the floor: always behind everything else.
 const FLAT = new Set(['rug', 'picnic', 'pond']);
-const clamp01 = v => Math.min(0.95, Math.max(0.05, v));
+const clampX = v => Math.min(0.94, Math.max(0.06, v));
+// Keep things below the top buttons and above the tray.
+const clampY = v => Math.min(0.86, Math.max(0.3, v));
 
 export function homeScreen(ctx, { room: startRoom = 'living' } = {}) {
   const { game, sound, go, save } = ctx;
@@ -15,9 +17,11 @@ export function homeScreen(ctx, { room: startRoom = 'living' } = {}) {
   const roomEl = h('div', { class: 'room' });
   const tray = h('div', { class: 'tray' });
   const tabs = h('div', { class: 'tabs' });
+  // The room fills the whole screen; the buttons and the tray float over it.
   const screen = h('section', { class: 'screen home' },
-    topBar(ctx, { back: () => go('hub') }),
-    h('div', { class: 'home-body' }, tabs, h('div', { class: 'room-wrap' }, roomEl), tray));
+    roomEl,
+    h('div', { class: 'home-top' }, topBar(ctx, { back: () => go('hub') }), tabs),
+    tray);
 
   function placed() { return r.placed[roomId] ?? (r.placed[roomId] = []); }
 
@@ -51,10 +55,10 @@ export function homeScreen(ctx, { room: startRoom = 'living' } = {}) {
       if (!moved) return;
       const box = roomEl.getBoundingClientRect();
       const rx = (e.clientX - box.left) / box.width, ry = (e.clientY - box.top) / box.height;
-      outside = ry > 1.02;
+      outside = e.clientY > tray.getBoundingClientRect().top;
       el.classList.toggle('leaving', outside);
-      p.x = clamp01(rx);
-      p.y = clamp01(ry);
+      p.x = clampX(rx);
+      p.y = clampY(ry);
       setPos(el, p.x, p.y, FLAT.has(p.id));
     });
     const end = () => {
@@ -77,7 +81,7 @@ export function homeScreen(ctx, { room: startRoom = 'living' } = {}) {
 
   function friendEl(id) {
     const el = h('img', { class: 'roamer', src: friendSrc(id), alt: '' });
-    const move = () => setPos(el, 0.12 + Math.random() * 0.76, 0.55 + Math.random() * 0.35);
+    const move = () => setPos(el, 0.12 + Math.random() * 0.76, 0.5 + Math.random() * 0.32);
     move();
     el.addEventListener('click', () => { sound.tap(); el.classList.remove('hop'); void el.offsetWidth; el.classList.add('hop'); });
     el.wander = move;
@@ -92,10 +96,10 @@ export function homeScreen(ctx, { room: startRoom = 'living' } = {}) {
     const here = new Set(placed().map(p => p.id));
     const mine = ITEMS.filter(i => i.room === roomId && r.items.includes(i.id) && !here.has(i.id));
     tray.replaceChildren(
-      h('div', { class: 'tray-title' }, mine.length ? 'My things — tap to put in the room, drag down here to put away' : 'Drag things down here to put them away'),
+      h('div', { class: 'tray-title' }, mine.length ? 'Tap to put in the room · drag down here to put away' : 'Drag things down here to put them away'),
       h('div', { class: 'tray-items' }, ...mine.map(i => h('button', {
         class: 'tray-item', 'aria-label': i.name,
-        onclick: () => { placed().push({ id: i.id, x: 0.25 + Math.random() * 0.5, y: 0.6 + Math.random() * 0.25 }); sound.right(); save(); draw(); },
+        onclick: () => { placed().push({ id: i.id, x: 0.25 + Math.random() * 0.5, y: 0.5 + Math.random() * 0.3 }); sound.right(); save(); draw(); },
       }, h('img', { src: itemSrc(i.id), alt: '' })))));
   }
 
