@@ -6,12 +6,15 @@ import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 import { startScreen } from './ui/start.js';
 import { hubScreen } from './ui/hub.js';
 import { walkScreen } from './ui/walkScreen.js';
+import { homeScreen } from './ui/home.js';
+import { shopScreen } from './ui/shop.js';
+import { zoomiesScreen } from './ui/zoomies.js';
 
 const game = loadGame();
 const reporter = createReporter({ url: SUPABASE_URL, key: SUPABASE_KEY });
 const sound = createSound(game);
 const root = document.getElementById('app');
-const screens = { start: startScreen, hub: hubScreen, walk: walkScreen };
+const screens = { start: startScreen, hub: hubScreen, walk: walkScreen, home: homeScreen, shop: shopScreen, zoomies: zoomiesScreen };
 
 function save() { saveGame(game); }
 
