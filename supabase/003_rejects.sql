@@ -1,10 +1,13 @@
--- A row the table refuses is kept here with the reason, instead of vanishing while the tablet
--- deletes it from its outbox. The daily report shows how many were refused (a count only).
+-- A refused row is counted, not lost: the tablet deletes a row from its outbox once the call
+-- succeeds, so without this a systematic refusal would silently drop every answer.
+-- Only the reason is kept — never the client's text (the key is public, anyone can call this) —
+-- and at most 1000 refusals a day. The daily report reads the count only.
 create table maths_pets.rejects (
   id bigint generated always as identity primary key,
   received_at timestamptz not null default now(),
-  payload jsonb not null,
-  error text not null
+  sqlstate text not null,
+  constraint_name text,
+  payload_bytes integer not null
 );
 alter table maths_pets.rejects enable row level security;
 
@@ -18,11 +21,14 @@ declare
   r jsonb;
   n integer := 0;
   k integer;
+  v_state text;
+  v_constraint text;
 begin
   if jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) > 100 then
     raise exception 'bad batch';
   end if;
-  -- Row by row: a malformed row cannot block the outbox, and it is kept in rejects instead of vanishing.
+  -- Row by row: a malformed row cannot block the outbox. A refused row is counted in rejects with
+  -- the reason code only: no client text is stored, and at most 1000 refusals a day are kept.
   for r in select value from jsonb_array_elements(p_rows) loop
     begin
       insert into maths_pets.answers (client_id, device_id, answered_at, mode, track, level, question,
@@ -35,7 +41,11 @@ begin
       get diagnostics k = row_count;
       n := n + k;
     exception when others then
-      insert into maths_pets.rejects (payload, error) values (r, left(sqlerrm, 300));
+      get stacked diagnostics v_state = returned_sqlstate, v_constraint = constraint_name;
+      if (select count(*) from maths_pets.rejects where received_at > now() - interval '1 day') < 1000 then
+        insert into maths_pets.rejects (sqlstate, constraint_name, payload_bytes)
+        values (v_state, nullif(v_constraint, ''), pg_column_size(r));
+      end if;
     end;
   end loop;
   return n;
