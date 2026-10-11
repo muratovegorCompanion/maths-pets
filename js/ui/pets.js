@@ -1,7 +1,6 @@
 // js/ui/pets.js — the friends living in a room: they walk, use things, sleep, and react to her finger.
 // What they decide is in petBrain.js; this file only draws it and turns touches into events.
 import { h, friendSrc, toast } from './dom.js';
-import { FRIENDS } from '../catalog.js';
 import { FLOOR, newPet, next, arrive, dropOn, tap, feed, chaseBall, freeItems } from '../petBrain.js';
 
 const sleepSrc = id => `assets/friends/sleep/${id}.webp`;
@@ -9,7 +8,6 @@ const PARTICLE = { splash: '💧', music: '🎵', watch: '🫧', eat: '🍪', sn
 const HOLD_MS = 450;
 const DROP_RADIUS = 0.13;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const isDog = id => FRIENDS.find(f => f.id === id)?.species === 'dachshund';
 
 export function createPets({ roomEl, ids, items, sound, game, save, onTreats }) {
   const now = () => performance.now();
@@ -30,7 +28,7 @@ export function createPets({ roomEl, ids, items, sound, game, save, onTreats }) 
     setTimeout(() => el.remove(), 1600);
   }
 
-  function happySound(id) { if (isDog(id)) sound.bark(); else sound.chirp(); }
+  function happySound(id) { sound.friend(id); }
 
   function activitySound(p) {
     const s = { splash: sound.splash, bounce: sound.boing, music: sound.melody, eat: sound.munch }[p.activity];
@@ -72,7 +70,7 @@ export function createPets({ roomEl, ids, items, sound, game, save, onTreats }) 
     if (p.mode === 'react' && prev?.reaction !== p.reaction) {
       if (p.reaction === 'happy') { happySound(p.id); particle(p.x, p.y - 0.12, '❤️'); }
       if (p.reaction === 'stretch') { sound.chirp(); particle(p.x, p.y - 0.12, '☀️'); }
-      if (p.reaction === 'eat') { sound.munch(); if (isDog(p.id)) setTimeout(() => sound.bark(), 700); particle(p.x, p.y - 0.12, '😋'); }
+      if (p.reaction === 'eat') { sound.munch(); setTimeout(() => sound.friend(p.id), 700); particle(p.x, p.y - 0.12, '😋'); }
     }
   }
 

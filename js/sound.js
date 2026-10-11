@@ -1,16 +1,29 @@
-// js/sound.js — short happy sounds made in the browser, plus a real dog bark for a right answer.
-const BARKS = ['assets/sounds/bark1.mp3', 'assets/sounds/bark2.mp3'];
+// js/sound.js — short happy sounds made in the browser, plus each kind of friend's real voice
+// (recordings credited in CREDITS.md). A right answer sounds in the voice of the friend she walks with.
+import { FRIENDS } from './catalog.js';
+
+export const VOICES = {
+  dachshund: ['assets/sounds/bark1.mp3', 'assets/sounds/bark2.mp3'],
+  cat: ['assets/sounds/cat1.mp3'],
+  giraffe: ['assets/sounds/giraffe1.mp3', 'assets/sounds/giraffe2.mp3'],
+  koala: ['assets/sounds/koala1.mp3'],
+  raccoon: ['assets/sounds/raccoon1.mp3'],
+};
+
+const speciesOf = id => FRIENDS.find(f => f.id === id)?.species;
 
 export function createSound(game) {
   let ac = null;
-  let barks = [], loading = null, lastBark = -1;
+  const voices = {}, turn = {};
+  let loading = null;
 
-  // Decode the barks once, the first time any sound is needed (audio needs a tap to start on tablets).
-  function loadBarks(a) {
+  // Decode the voices once, the first time any sound is needed (audio needs a tap to start on tablets).
+  function loadVoices(a) {
     if (loading) return;
-    loading = Promise.all(BARKS.map(u => fetch(u).then(r => r.arrayBuffer()).then(b => a.decodeAudioData(b))))
-      .then(bufs => { barks = bufs; })
-      .catch(() => { /* no barks: the chime plays instead */ });
+    loading = Promise.all(Object.entries(VOICES).map(([kind, files]) =>
+      Promise.all(files.map(u => fetch(u).then(r => r.arrayBuffer()).then(b => a.decodeAudioData(b))))
+        .then(bufs => { voices[kind] = bufs; })
+        .catch(() => { /* this voice missing: the chime plays instead */ })));
   }
 
   function audio() {
@@ -18,7 +31,7 @@ export function createSound(game) {
       const C = globalThis.AudioContext || globalThis.webkitAudioContext;
       if (!C) return null;
       ac = new C();
-      loadBarks(ac);
+      loadVoices(ac);
     }
     if (ac.state === 'suspended') ac.resume();
     return ac;
@@ -43,14 +56,16 @@ export function createSound(game) {
     } catch { /* no audio on this device: play silently */ }
   }
 
-  function bark() {
+  // The voice of a kind of friend ('dachshund', 'cat', …); takes turns between its recordings.
+  function voice(kind) {
     if (game.muted) return;
     try {
       const a = audio();
-      if (!a || !barks.length) { play([[660, 0, 0.12], [880, 0.1, 0.2]]); return; }
-      lastBark = (lastBark + 1) % barks.length;
+      const bufs = voices[kind];
+      if (!a || !bufs?.length) { play([[660, 0, 0.12], [880, 0.1, 0.2]]); return; }
+      turn[kind] = ((turn[kind] ?? -1) + 1) % bufs.length;
       const src = a.createBufferSource(), g = a.createGain();
-      src.buffer = barks[lastBark];
+      src.buffer = bufs[turn[kind]];
       g.gain.value = 0.9;
       src.connect(g).connect(a.destination);
       src.start();
@@ -83,8 +98,9 @@ export function createSound(game) {
 
   return {
     tap: () => play([[660, 0, 0.05]]),
-    right: bark,
-    bark,
+    right: () => voice(speciesOf(game.activeFriend) ?? 'dachshund'),
+    voice,
+    friend: id => voice(speciesOf(id)),
     chirp: () => sweep(700, 1400, 0.18, 'sine', 0.14),
     boing: () => sweep(180, 520, 0.35, 'triangle', 0.16),
     splash: () => noise(0.45, 0.14, 2200),

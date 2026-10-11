@@ -32,7 +32,7 @@ export function hubScreen(ctx) {
     game.activeFriend = r.friends[(i + 1) % r.friends.length];
     img.src = friendSrc(game.activeFriend);
     showName();
-    sound.tap();
+    sound.friend(game.activeFriend);
     bump(img, 'jump');
     save();
   } }, img);
