@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pet & Words</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Comic Sans MS","Trebuchet MS",sans-serif;background:linear-gradient(#bde7ff,#fff3c4);min-height:100vh;color:#4a3270;text-align:center}
+.screen{display:none;max-width:560px;margin:0 auto;padding:16px}
+.screen.on{display:block}
+h1{font-size:30px;margin:8px 0}
+.btn{font:inherit;font-size:22px;border:0;border-radius:24px;padding:14px 22px;margin:6px;background:#ff8fb1;color:#fff;box-shadow:0 5px 0 #d4577f;cursor:pointer}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #d4577f}
+.btn.g{background:#5fd18a;box-shadow:0 5px 0 #3a9e61}
+.btn.b{background:#6aa8ff;box-shadow:0 5px 0 #3f78cc}
+.btn.y{background:#ffc83d;box-shadow:0 5px 0 #c99510;color:#5a4000}
+.pets{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.pet{background:#fff;border-radius:28px;padding:16px;font-size:80px;box-shadow:0 6px 0 #e3d6f5;cursor:pointer}
+.pet small{display:block;font-size:22px;color:#4a3270}
+.pet:active{transform:scale(.95)}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:24px;font-weight:bold}
+.coins{background:#fff;border-radius:20px;padding:6px 16px}
+.stage{background:#fff;border-radius:32px;margin:12px 0;padding:14px;box-shadow:0 6px 0 #e3d6f5;position:relative;min-height:230px}
+.petbig{font-size:120px;line-height:1.1;display:inline-block;animation:bob 2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-10px) rotate(3deg)}}
+.petbig.hop{animation:hop .6s}
+@keyframes hop{30%{transform:translateY(-40px) scale(1.15)}}
+.deco{font-size:44px;min-height:52px}
+.bars{display:grid;gap:6px;margin:8px 0;text-align:left;font-size:18px}
+.bar{background:#eee;border-radius:12px;height:18px;overflow:hidden}
+.bar i{display:block;height:100%;transition:width .4s}
+.word{font-size:46px;font-weight:bold;background:#fff;border-radius:28px;padding:26px 8px;margin:14px 0;box-shadow:0 6px 0 #e3d6f5;word-break:break-word}
+.syl{font-size:24px;color:#8b6bb8;margin-top:6px;letter-spacing:2px}
+.mic{width:130px;height:130px;border-radius:50%;border:0;font-size:60px;background:#ff5b6e;box-shadow:0 8px 0 #c23446;cursor:pointer}
+.mic.rec{animation:pulse 1s infinite;background:#ff2d45}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.msg{font-size:24px;min-height:70px;margin:10px 0}
+.shop{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item{background:#fff;border-radius:22px;padding:10px;box-shadow:0 5px 0 #e3d6f5}
+.item .e{font-size:54px}.item .p{font-size:20px;margin:4px 0}
+.item .btn{font-size:18px;padding:8px 14px}
+.tabs button{opacity:.6}.tabs button.on{opacity:1}
+.fly{position:fixed;font-size:50px;pointer-events:none;animation:fly 1.2s ease-out forwards;z-index:9}
+@keyframes fly{to{transform:translateY(-160px);opacity:0}}
+.langs{margin-top:6px}.small{font-size:15px;color:#7a6a94}
+</style></head><body>
+<div id="s-pick" class="screen">
+  <div class="langs"><button class="btn" onclick="setLang('en')">🇬🇧 English</button><button class="btn b" onclick="setLang('uk')">🇺🇦 Українська</button><button class="btn g" onclick="setLang('ru')">🌈 Русский</button></div>
+  <h1 data-i="choose"></h1>
+  <div class="pets" id="pets"></div>
+</div>
+
+<div id="s-home" class="screen">
+  <div class="top"><span id="pname"></span><span class="coins">🪙 <b id="coins">0</b></span></div>
+  <div class="stage">
+    <div class="deco" id="deco"></div>
+    <div class="petbig" id="petbig" onclick="pet()"></div>
+    <div id="say" class="msg" style="min-height:40px;margin:0"></div>
+  </div>
+  <div class="bars">
+    <div><span data-i="food"></span><div class="bar"><i id="b-food" style="background:#ff8a4d"></i></div></div>
+    <div><span data-i="fun"></span><div class="bar"><i id="b-fun" style="background:#ffc83d"></i></div></div>
+    <div><span data-i="energy"></span><div class="bar"><i id="b-rest" style="background:#6aa8ff"></i></div></div>
+  </div>
+  <button class="btn g" onclick="show('s-word');newWord()" data-i="words"></button>
+  <button class="btn y" onclick="show('s-shop');renderShop()" data-i="shop"></button>
+  <button class="btn b" onclick="show('s-bag');renderBag()" data-i="things"></button>
+  <div><button class="btn" style="font-size:14px;padding:6px 12px" onclick="resetAll()" data-i="over"></button>
+  <button class="btn" style="font-size:14px;padding:6px 12px" onclick="show('s-pick')">🌍</button></div>
+</div>
+
+<div id="s-word" class="screen">
+  <div class="top"><button class="btn b" onclick="show('s-home')">⬅️</button><span class="coins">🪙 <b class="cc"></b></span></div>
+  <div style="font-size:20px" data-i="tap"></div>
+  <div class="word"><span id="flag" style="font-size:30px"></span><br><span id="w"></span><div class="syl" id="syl"></div></div>
+  <button class="mic" id="mic" onclick="listen()">🎤</button>
+  <div class="msg" id="msg"></div>
+  <button class="btn y" onclick="newWord()" data-i="next"></button>
+  <button class="btn g" onclick="say()" data-i="listen"></button>
+  <div id="manual" class="small" style="display:none"><span data-i="micbad"></span> <button class="btn b" style="font-size:16px;padding:6px 12px" onclick="manualOk()" data-i="adult"></button></div>
+</div>
+
+<div id="s-shop" class="screen">
+  <div class="top"><button class="btn b" onclick="show('s-home')">⬅️</button><span class="coins">🪙 <b class="cc"></b></span></div>
+  <h1 data-i="shopH"></h1>
+  <div class="tabs"><button class="btn g" data-t="food" data-i="tfood"></button><button class="btn" data-t="toy" data-i="ttoy"></button><button class="btn b" data-t="bed" data-i="tbed"></button></div>
+  <div class="shop" id="shop"></div>
+</div>
+
+<div id="s-bag" class="screen">
+  <div class="top"><button class="btn b" onclick="show('s-home')">⬅️</button><span class="coins">🪙 <b class="cc"></b></span></div>
+  <h1 data-i="thingsH"></h1>
+  <div class="shop" id="bag"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const PETS={koala:'🐨',cat:'🐱',dog:'🐶',elephant:'🐘'};
+const ITEMS=[
+ {id:'apple',t:'food',e:'🍎',p:2,v:20},{id:'carrot',t:'food',e:'🥕',p:2,v:20},
+ {id:'fish',t:'food',e:'🐟',p:4,v:35},{id:'cake',t:'food',e:'🍰',p:6,v:50},
+ {id:'ball',t:'toy',e:'⚽',p:5,v:30},{id:'balloon',t:'toy',e:'🎈',p:4,v:25},
+ {id:'teddy',t:'toy',e:'🧸',p:8,v:40},{id:'kite',t:'toy',e:'🪁',p:10,v:50},
+ {id:'bed1',t:'bed',e:'🛏️',p:12,v:40},{id:'bed2',t:'bed',e:'🛋️',p:18,v:60},{id:'bed3',t:'bed',e:'⛺',p:25,v:80}
+];
+// words alternate between these languages
+const WL=['en','uk','ru'];
+const FLAG={en:'🇬🇧',uk:'🇺🇦',ru:'🌈'};
+const STT={en:'en-US',uk:'uk-UA',ru:'ru-RU'};
+const WORDS={
+en:[['elephant','el-e-phant'],['butterfly','but-ter-fly'],['dinosaur','di-no-saur'],['umbrella','um-brel-la'],['strawberry','straw-ber-ry'],['crocodile','croc-o-dile'],['caterpillar','cat-er-pil-lar'],['rhinoceros','rhi-noc-er-os'],['spaghetti','spa-ghet-ti'],['hippopotamus','hip-po-pot-a-mus'],['vegetable','veg-e-ta-ble'],['chocolate','choc-o-late'],['squirrel','squir-rel'],['giraffe','gi-raffe'],['rainbow','rain-bow'],['helicopter','hel-i-cop-ter'],['telephone','tel-e-phone'],['beautiful','beau-ti-ful'],['scissors','scis-sors'],['astronaut','as-tro-naut'],['jellyfish','jel-ly-fish'],['thunderstorm','thun-der-storm']],
+uk:[['велосипед','ве-ло-си-пед'],['холодильник','хо-ло-диль-ник'],['хризантема','хри-зан-те-ма'],['прямокутник','пря-мо-кут-ник'],['парашут','па-ра-шут'],['екскаватор','екс-ка-ва-тор'],['крокодил','кро-ко-дил'],['шоколад','шо-ко-лад'],['гіпопотам','гі-по-по-там'],['морозиво','мо-ро-зи-во'],['мавпочка','мав-поч-ка'],['космонавт','кос-мо-навт'],['пилосос','пи-ло-сос'],['фотоапарат','фо-то-а-па-рат'],['різнокольоровий','різ-но-ко-льо-ро-вий'],['вертоліт','вер-то-літ'],['сковорідка','ско-во-рід-ка'],['курча','кур-ча'],['жираф','жи-раф'],['веселка','ве-сел-ка']],
+ru:[['велосипед','ве-ло-си-пед'],['холодильник','хо-ло-диль-ник'],['хризантема','хри-зан-те-ма'],['прямоугольник','пря-мо-уголь-ник'],['парашют','па-ра-шют'],['экскаватор','экс-ка-ва-тор'],['крокодил','кро-ко-дил'],['шоколад','шо-ко-лад'],['гиппопотам','гип-по-по-там'],['мороженое','мо-ро-же-но-е'],['обезьяна','обе-зья-на'],['космонавт','кос-мо-навт'],['пылесос','пы-ле-сос'],['фотоаппарат','фо-то-ап-па-рат'],['разноцветный','раз-но-цвет-ный'],['вертолёт','вер-то-лёт'],['сковородка','ско-во-род-ка'],['цыплёнок','цып-лё-нок'],['жираф','жи-раф'],['радуга','ра-ду-га']]
+};
+const T={
+en:{choose:'Choose your pet!',words:'🎤 Words',shop:'🛍️ Shop',things:'🎒 My things',over:'Start over',tap:'Tap the microphone and say the word:',next:'Next word ➡️',listen:'🔊 Listen',micbad:'Mic not working?',adult:'Grown-up: count it',tfood:'🍎 Food',ttoy:'🧸 Toys',tbed:'🛏️ Beds',shopH:'Shop',thingsH:'My things',food:'🍎 Food',fun:'🎈 Fun',energy:'😴 Energy',
+ hi:'Hi! I am your friend! 💕',confirm:'Start the game over?',pets:['Yay! 😊','I like it!','Let\'s play!','You\'re the best friend!'],
+ nosr:'This browser can\'t hear the mic 😢 Open it in Chrome.',listening:'Listening… say the word! 👂',off:'Mic is off. Tap 🎤 to talk.',
+ blocked:'Microphone is blocked 😢 Tap the 🔒 near the address bar and choose Allow.',again:'Oops, tap the mic again!',heard:h=>`I heard "${h}".<br>Try again! 💪`,
+ got:c=>`${c>=4?'Super! 🌟':'Well done! 👏'} You got ${'🪙'.repeat(c)}`,have:' · have: ',buy:'Buy',feed:'Feed',play:'Play',sleep:'Put to bed',
+ poor:'Not enough coins! Say more words 🎤',empty:'Nothing yet. Visit the shop! 🛍️',yum:'Yum yum! 😋',yay:'Yay, playtime! 🎉',zzz:'Zzz… sweet dreams 😴',
+ pn:{koala:'Koala',cat:'Kitty',dog:'Puppy',elephant:'Elephant'},
+ in:{apple:'Apple',carrot:'Carrot',fish:'Fish',cake:'Cake',ball:'Ball',balloon:'Balloon',teddy:'Teddy bear',kite:'Kite',bed1:'Little bed',bed2:'Sofa',bed3:'Tent house'}},
+uk:{choose:'Обери улюбленця!',words:'🎤 Слова',shop:'🛍️ Магазин',things:'🎒 Мої речі',over:'Почати знову',tap:'Натисни на мікрофон і скажи слово:',next:'Інше слово ➡️',listen:'🔊 Послухати',micbad:'Мікрофон не працює?',adult:'Дорослий: зарахувати',tfood:'🍎 Їжа',ttoy:'🧸 Іграшки',tbed:'🛏️ Ліжка',shopH:'Магазин',thingsH:'Мої речі',food:'🍎 Ситість',fun:'🎈 Веселощі',energy:'😴 Бадьорість',
+ hi:'Привіт! Я твій друг! 💕',confirm:'Почати гру знову?',pets:['Ура! 😊','Мені подобається!','Погратимо?','Ти найкращий друг!'],
+ nosr:'Цей браузер не чує мікрофон 😢 Відкрий у Chrome.',listening:'Слухаю… скажи слово! 👂',off:'Мікрофон вимкнено. Натисни 🎤, щоб говорити.',
+ blocked:'Мікрофон заблоковано 😢 Натисни 🔒 біля адресного рядка й обери «Дозволити».',again:'Ой, натисни мікрофон ще раз!',heard:h=>`Я почув «${h}».<br>Спробуй ще раз! 💪`,
+ got:c=>`${c>=4?'Супер! 🌟':'Молодець! 👏'} Ти отримав ${'🪙'.repeat(c)}`,have:' · є: ',buy:'Купити',feed:'Нагодувати',play:'Гратися',sleep:'Вкласти спати',
+ poor:'Не вистачає монеток! Скажи ще слова 🎤',empty:'Поки порожньо. Зазирни до магазину! 🛍️',yum:'Ням-ням! 😋',yay:'Ура, гра! 🎉',zzz:'Zzz… гарних снів 😴',
+ pn:{koala:'Коала',cat:'Котик',dog:'Собачка',elephant:'Слоник'},
+ in:{apple:'Яблуко',carrot:'Морквинка',fish:'Рибка',cake:'Тортик',ball:'М\'ячик',balloon:'Кулька',teddy:'Ведмедик',kite:'Повітряний змій',bed1:'Ліжечко',bed2:'Диванчик',bed3:'Намет-будиночок'}},
+ru:{choose:'Выбери питомца!',words:'🎤 Слова',shop:'🛍️ Магазин',things:'🎒 Мои вещи',over:'Начать заново',tap:'Нажми на микрофон и скажи слово:',next:'Другое слово ➡️',listen:'🔊 Послушать',micbad:'Микрофон не работает?',adult:'Взрослый: засчитать',tfood:'🍎 Еда',ttoy:'🧸 Игрушки',tbed:'🛏️ Кровати',shopH:'Магазин',thingsH:'Мои вещи',food:'🍎 Сытость',fun:'🎈 Веселье',energy:'😴 Бодрость',
+ hi:'Привет! Я твой друг! 💕',confirm:'Начать игру заново?',pets:['Ура! 😊','Мне нравится!','Играем?','Ты лучший друг!'],
+ nosr:'Этот браузер не слышит микрофон 😢 Открой в Chrome.',listening:'Слушаю… скажи слово! 👂',off:'Микрофон выключен. Нажми 🎤, чтобы говорить.',
+ blocked:'Микрофон заблокирован 😢 Нажми 🔒 у адресной строки и выбери «Разрешить».',again:'Ой, нажми микрофон ещё раз!',heard:h=>`Я услышал «${h}».<br>Попробуй ещё раз! 💪`,
+ got:c=>`${c>=4?'Супер! 🌟':'Молодец! 👏'} Ты получил ${'🪙'.repeat(c)}`,have:' · есть: ',buy:'Купить',feed:'Покормить',play:'Играть',sleep:'Уложить спать',
+ poor:'Не хватает монеток! Скажи ещё слова 🎤',empty:'Пока пусто. Загляни в магазин! 🛍️',yum:'Ам-ням! 😋',yay:'Ура, игра! 🎉',zzz:'Zzz… сладкие сны 😴',
+ pn:{koala:'Коала',cat:'Котик',dog:'Собачка',elephant:'Слоник'},
+ in:{apple:'Яблоко',carrot:'Морковка',fish:'Рыбка',cake:'Тортик',ball:'Мячик',balloon:'Шарик',teddy:'Мишка',kite:'Воздушный змей',bed1:'Кроватка',bed2:'Диванчик',bed3:'Домик-палатка'}}
+};
+function load(){try{return JSON.parse(localStorage.getItem('leechka'))||{}}catch(e){return{}}}
+function save(){try{localStorage.setItem('leechka',JSON.stringify(S))}catch(e){}}
+let S=load();
+let lang=(()=>{try{return localStorage.getItem('leechka_lang')||'en'}catch(e){return'en'}})();
+const tr=k=>T[lang][k];
+function setLang(l){lang=l;try{localStorage.setItem('leechka_lang',l)}catch(e){}applyLang();show(S.pet?'s-home':'s-pick')}
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i]').forEach(e=>e.textContent=tr(e.dataset.i));
+  $('pets').innerHTML=Object.entries(PETS).map(([k,e])=>`<div class="pet" onclick="choose('${k}')">${e}<small>${T[lang].pn[k]}</small></div>`).join('');
+}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));updateAll()}
+function updateAll(){
+  document.querySelectorAll('.cc').forEach(e=>e.textContent=S.coins||0);
+  $('coins').textContent=S.coins||0;
+  if(S.pet){$('petbig').textContent=PETS[S.pet];$('pname').textContent=PETS[S.pet]+' '+T[lang].pn[S.pet];
+    $('deco').textContent=(S.placed||[]).map(id=>ITEMS.find(i=>i.id===id).e).join(' ');
+    $('b-food').style.width=S.food+'%';$('b-fun').style.width=S.fun+'%';$('b-rest').style.width=S.rest+'%'}
+}
+function choose(k){S={pet:k,coins:0,food:60,fun:60,rest:60,own:{},placed:[]};save();show('s-home');talk(tr('hi'))}
+function resetAll(){if(confirm(tr('confirm'))){S={};save();show('s-pick')}}
+let tt;function talk(t){$('say').textContent=t;clearTimeout(tt);tt=setTimeout(()=>$('say').textContent='',3500)}
+function pet(){const p=$('petbig');p.classList.remove('hop');void p.offsetWidth;p.classList.add('hop');const a=tr('pets');talk(a[Math.random()*a.length|0]);fly('💖')}
+function fly(e,n=1){for(let i=0;i<n;i++){const d=document.createElement('div');d.className='fly';d.textContent=e;d.style.left=(20+Math.random()*60)+'vw';d.style.top=(40+Math.random()*20)+'vh';document.body.appendChild(d);setTimeout(()=>d.remove(),1300)}}
+
+// ---- words: languages take turns (en -> uk -> ru -> ...) ----
+let cur=null,turn=Math.random()*3|0,seen={};
+function newWord(){
+  const wl=WL[turn%WL.length];turn++;
+  const pool=WORDS[wl];let w;
+  do{w=pool[Math.random()*pool.length|0]}while(cur&&w[0]===cur.t&&pool.length>1);
+  cur={t:w[0],syl:w[1],l:wl};busy=false;
+  $('flag').textContent=FLAG[wl];$('w').textContent=w[0];$('syl').textContent=w[1];$('msg').textContent='';
+  if(want&&rec){try{rec.abort()}catch(e){}} // onend restarts in the new word's language
+  if(want)$('msg').textContent=tr('listening');
+  updateAll();
+}
+let speaking=false,quietUntil=0;
+function pickVoice(l){const vs=speechSynthesis.getVoices().filter(v=>v.lang.replace('_','-').toLowerCase().startsWith(l));
+  return vs.find(v=>/premium/i.test(v.name))||vs.find(v=>/enhanced/i.test(v.name))||vs.find(v=>/google/i.test(v.name))||vs.find(v=>/lesya|milena|samantha/i.test(v.name))||vs[0]||null}
+if('speechSynthesis' in window)speechSynthesis.onvoiceschanged=()=>{};
+function muteMic(){speaking=true;if(rec){try{rec.abort()}catch(e){}}}
+function unmuteMic(){speaking=false;quietUntil=Date.now()+700}
+function sayLocal(){
+  if(!('speechSynthesis' in window))return unmuteMic();
+  const v=pickVoice(cur.l);
+  if(!v){$('msg').textContent='🔇';return unmuteMic()}
+  const u=new SpeechSynthesisUtterance(cur.t);u.voice=v;u.lang=v.lang;u.rate=.75;
+  u.onend=unmuteMic;u.onerror=unmuteMic;speechSynthesis.speak(u)}
+let player=null;
+function say(){if(!cur)return;
+  if('speechSynthesis' in window)speechSynthesis.cancel();if(player){player.pause();player=null}
+  muteMic(); // the mic must not hear the computer's own voice
+  if(cur.l==='en')return sayLocal();
+  // Ukrainian/Russian: Google's online voice sounds much more natural; fall back to the Mac voice offline
+  const a=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+cur.l+'&q='+encodeURIComponent(cur.t));
+  player=a;a.playbackRate=.9;
+  a.onended=()=>{player=null;unmuteMic()};
+  a.onerror=()=>{player=null;sayLocal()};
+  a.play().catch(()=>{player=null;sayLocal()})}
+function norm(s){return s.toLowerCase().replace(/ё/g,'е').replace(/[^\p{L} ]/gu,'').trim()}
+function sim(a,b){const m=a.length,n=b.length;if(!m||!n)return 0;const d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);for(let j=0;j<=n;j++)d[0][j]=j;
+ for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return 1-d[m][n]/Math.max(m,n)}
+function score(alts){const t=norm(cur.t);let best=0;
+ for(const a of alts){const x=norm(a);best=Math.max(best,sim(x,t));for(const part of x.split(' '))best=Math.max(best,sim(part,t)*.98)}
+ return best>=.97?5:best>=.85?4:best>=.7?3:best>=.55?2:best>=.4?1:0}
+let rec=null,want=false,busy=false;
+function listen(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){$('msg').textContent=tr('nosr');$('manual').style.display='block';return}
+  if(want){stopListen();return}
+  want=true;$('mic').classList.add('rec');$('msg').textContent=tr('listening');start(SR);
+}
+function stopListen(){want=false;$('mic').classList.remove('rec');if(rec){try{rec.stop()}catch(e){}}$('msg').textContent=tr('off')}
+function start(SR){
+  if(rec)return;
+  const r=new SR();rec=r;r.lang=STT[cur.l];r.maxAlternatives=5;r.interimResults=false;r.continuous=false;
+  r.onresult=e=>{if(busy||speaking||Date.now()<quietUntil)return;const res=e.results[0];if(!res)return;const alts=[...res].map(a=>a.transcript);reward(score(alts),alts[0])};
+  r.onerror=e=>{if(e.error==='no-speech'||e.error==='aborted')return;want=false;$('mic').classList.remove('rec');
+    $('msg').textContent=(e.error==='not-allowed'?tr('blocked'):tr('again'))+' ['+e.error+']';$('manual').style.display='block'};
+  r.onend=()=>{if(rec===r)rec=null;if(want)setTimeout(function again(){if(!want||rec)return;if(speaking||Date.now()<quietUntil)return setTimeout(again,300);start(SR)},250)};
+  try{r.start()}catch(e){rec=null}
+}
+function reward(c,heard){
+  if(c===0){$('msg').innerHTML=tr('heard')(heard);return}
+  if(busy)return;busy=true;
+  S.coins=(S.coins||0)+c;save();updateAll();
+  $('msg').innerHTML=tr('got')(c);fly('🪙',c);
+  setTimeout(newWord,1800); // next word, next language
+}
+function manualOk(){reward(3,'')}
+// ---- shop ----
+let tab='food';
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;renderShop()});
+function renderShop(){updateAll();
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  $('shop').innerHTML=ITEMS.filter(i=>i.t===tab).map(i=>{const own=S.own[i.id]||0;
+   return `<div class="item"><div class="e">${i.e}</div><div>${tr('in')[i.id]}</div><div class="p">🪙 ${i.p}${own?tr('have')+own:''}</div><button class="btn g" onclick="buy('${i.id}')">${tr('buy')}</button></div>`}).join('')}
+function buy(id){const i=ITEMS.find(x=>x.id===id);
+  if((S.coins||0)<i.p){fly('😢');alert(tr('poor'));return}
+  S.coins-=i.p;S.own[id]=(S.own[id]||0)+1;save();renderShop();fly(i.e)}
+function renderBag(){updateAll();
+  const list=ITEMS.filter(i=>S.own[i.id]);
+  $('bag').innerHTML=list.length?list.map(i=>{
+   const label=i.t==='food'?tr('feed'):i.t==='toy'?tr('play'):tr('sleep');
+   return `<div class="item"><div class="e">${i.e}</div><div>${tr('in')[i.id]} ×${S.own[i.id]}</div><button class="btn" onclick="use('${i.id}')">${label}</button></div>`}).join(''):`<p style="grid-column:1/-1;font-size:22px">${tr('empty')}</p>`}
+function use(id){const i=ITEMS.find(x=>x.id===id);
+  if(i.t==='food'){S.own[id]--;S.food=Math.min(100,S.food+i.v);talk(tr('yum'))}
+  else if(i.t==='toy'){S.fun=Math.min(100,S.fun+i.v);if(!S.placed.includes(id))S.placed.push(id);talk(tr('yay'))}
+  else{S.rest=Math.min(100,S.rest+i.v);if(!S.placed.includes(id))S.placed.push(id);talk(tr('zzz'))}
+  save();show('s-home');fly(i.e,3)}
+setInterval(()=>{if(!S.pet)return;S.food=Math.max(0,S.food-1);S.fun=Math.max(0,S.fun-1);S.rest=Math.max(0,S.rest-.5);save();if($('s-home').classList.contains('on'))updateAll()},30000);
+applyLang();show(S.pet?'s-home':'s-pick');
+if(location.protocol==='file:'){const b=document.createElement('div');
+ b.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#ff5b6e;color:#fff;font-size:18px;padding:10px;z-index:99';
+ b.innerHTML='⚠️ Opened as a file: Chrome will ask for the mic every time. Open <a style="color:#fff;font-weight:bold" href="http://localhost:8000/index.html">http://localhost:8000/index.html</a>';
+ document.body.appendChild(b)}
+</script></body></html>
