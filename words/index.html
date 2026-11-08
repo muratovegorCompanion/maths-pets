@@ -179,8 +179,7 @@ function muteMic(){speaking=true;if(rec){try{rec.abort()}catch(e){}}}
 function unmuteMic(){speaking=false;quietUntil=Date.now()+700}
 let player=null;
 // Online voice only; the Mac system voice is never used (it hung the Mac).
-function say(){if(!cur)return;
-  if(player){player.pause();player=null}
+function say(){if(!cur||player)return; // already speaking: ignore extra taps
   muteMic(); // the mic must not hear the computer's own voice
   const a=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+cur.l+'&q='+encodeURIComponent(cur.t));
   player=a;
